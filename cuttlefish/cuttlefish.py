@@ -11,7 +11,17 @@ def main():
     initialSelection = [
     inquirer.List('initial_selection',
                     message="Cuttlefish options:",
-                    choices=['display on pi','play music','related artists', 'user top tracks', 'user playlists', 'currently playing'],
+                    choices=[
+                        'next track',
+                        'currently playing',
+                        'display on pi',
+                        'play music',
+                        'pause music',
+                        'related artists',
+                        'user top tracks', 
+                        'user playlists', 
+                        'gen test oauth'
+                        ],
                 ),
     ]
     userSelect = inquirer.prompt(initialSelection)
@@ -86,17 +96,32 @@ def currentlyPlaying():
 
 def playMusic():
     authenticateSpotipyOauth('user-read-playback-state,user-modify-playback-state')
-    print(sp.devices())
-    # sp.start_playback()
+    sp.start_playback()
+
+def pauseMusic():
+    authenticateSpotipyOauth('user-modify-playback-state')
+    sp.pause_playback()
+
+def nextTrack():
+	authenticateSpotipyOauth('user-modify-playback-state')
+	sp.next_track()
+        
+def genTestOauth():
+    authenticateSpotipyOauth('user-read-playback-state,user-modify-playback-state,user-read-currently-playing,user-top-read')
+    displayCuttlefish()
+    print(".cache generated")
     sp.volume(100)
     sleep(2)
     sp.volume(50)
     sleep(2)
     sp.volume(100)
 
+
 def displayCuttlefish():
     pi_name = "192.168.0.201"
     print(pi_name)
+    print(sp.devices())
+
 
 def triageSelection(user_choice):
     if user_choice == 'related artists':
@@ -111,6 +136,12 @@ def triageSelection(user_choice):
         playMusic()
     elif user_choice == 'display on pi':
         displayCuttlefish()
+    elif user_choice == 'next track':
+        nextTrack()
+    elif user_choice == 'gen test oauth':
+        genTestOauth()
+    elif user_choice == 'pause music':
+        pauseMusic()
     else:
         print(user_choice)
 
