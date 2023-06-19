@@ -3,6 +3,7 @@
 import spotipy
 import sys
 import inquirer
+from time import sleep
 from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
 
@@ -10,7 +11,7 @@ def main():
     initialSelection = [
     inquirer.List('initial_selection',
                     message="Cuttlefish options:",
-                    choices=['play music','related artists', 'user top tracks', 'user playlists', 'currently playing'],
+                    choices=['display on pi','play music','related artists', 'user top tracks', 'user playlists', 'currently playing'],
                 ),
     ]
     userSelect = inquirer.prompt(initialSelection)
@@ -83,6 +84,20 @@ def currentlyPlaying():
     else:
         print("No track currently playing.") 
 
+def playMusic():
+    authenticateSpotipyOauth('user-read-playback-state,user-modify-playback-state')
+    print(sp.devices())
+    # sp.start_playback()
+    sp.volume(100)
+    sleep(2)
+    sp.volume(50)
+    sleep(2)
+    sp.volume(100)
+
+def displayCuttlefish():
+    pi_name = "192.168.0.201"
+    print(pi_name)
+
 def triageSelection(user_choice):
     if user_choice == 'related artists':
         relatedArtists()
@@ -94,6 +109,8 @@ def triageSelection(user_choice):
         currentlyPlaying()
     elif user_choice == 'play music':
         playMusic()
+    elif user_choice == 'display on pi':
+        displayCuttlefish()
     else:
         print(user_choice)
 
