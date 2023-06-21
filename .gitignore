@@ -1,3 +1,2 @@
-data/userdata.py
-data/.env
+data/**
 .cache

@@ -2,6 +2,7 @@
 
 import spotipy
 import sys
+import os
 import inquirer
 from time import sleep
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -38,7 +39,6 @@ def authenticateSpotipyOauth(scope):
     global sp
     global sessionUser
     auth_manager = SpotifyClientCredentials()
-    # sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope,open_browser=False))
     sessionUser = '73e213ujw0wxcy49bxwcfuhik'
 
@@ -56,10 +56,8 @@ def listUserPlaylists():
         
 def userTopTracks():
     print("top tracks")
-    authenticateSpotipyOauth("user-top-read")
-    # scope = 'user-top-read'
     ranges = ['short_term', 'medium_term', 'long_term']
-    for sp_range in ['short_term', 'medium_term', 'long_term']:
+    for sp_range in ranges:
         print("range:", sp_range)
         results = sp.current_user_top_artists(time_range=sp_range, limit=50)
         for i, item in enumerate(results['items']):
@@ -84,37 +82,48 @@ def relatedArtists():
 
 def currentlyPlaying():
     print("currently playing: \n")
-    authenticateSpotipyOauth('user-read-currently-playing')
     track = sp.current_user_playing_track()
+    def catImg(album_art):
+        os.system('wget -q ' + album_art)
+        os.system('mv ' + album_art[24:] + ' data/album_art_cache')
+        os.system('catimg -w 50 data/album_art_cache')
     if not track is None:
-        print(track['item']['album']['images'][0]['url'])
-        print(track['item']['artists'][0]['name'])
-        print(track['item']['album']['name'])
-        print(track['item']['name'])
+        album_art = track['item']['album']['images'][0]['url']
+        album_name = track['item']['album']['name']
+        artist_name = track['item']['artists'][0]['name']
+        track_name = track['item']['name']
+        catImg(album_art)
+        print(artist_name + " - " + album_name)
+        print(track_name)
     else:
         print("No track currently playing.") 
 
+def playPauseMusic():
+    track = sp.currently_playing()
+    if track['is_playing'] is False:
+        sp.start_playback()
+    else: 
+        sp.pause_playback()
+
 def playMusic():
-    authenticateSpotipyOauth('user-read-playback-state,user-modify-playback-state')
     sp.start_playback()
 
 def pauseMusic():
-    authenticateSpotipyOauth('user-modify-playback-state')
     sp.pause_playback()
 
 def nextTrack():
-	authenticateSpotipyOauth('user-modify-playback-state')
 	sp.next_track()
         
-def genTestOauth():
-    authenticateSpotipyOauth('user-read-playback-state,user-modify-playback-state,user-read-currently-playing,user-top-read')
-    displayCuttlefish()
-    print(".cache generated")
+def volumeControl():
     sp.volume(100)
     sleep(2)
     sp.volume(50)
     sleep(2)
     sp.volume(100)
+        
+def genTestOauth():
+    displayCuttlefish()
+    print(".cache generated")
 
 
 def displayCuttlefish():
@@ -124,6 +133,17 @@ def displayCuttlefish():
 
 
 def triageSelection(user_choice):
+    scopes = '''user-read-playback-state, 
+                user-modify-playback-state, 
+                user-read-currently-playing, 
+                user-top-read, 
+                streaming, 
+                playlist-read-private, 
+                user-follow-modify, 
+                user-read-recently-played, 
+                user-library-read
+            '''
+    authenticateSpotipyOauth(scopes)
     if user_choice == 'related artists':
         relatedArtists()
     elif user_choice == 'user top tracks':
@@ -133,7 +153,7 @@ def triageSelection(user_choice):
     elif user_choice == 'currently playing':
         currentlyPlaying()
     elif user_choice == 'play music':
-        playMusic()
+        playPauseMusic()
     elif user_choice == 'display on pi':
         displayCuttlefish()
     elif user_choice == 'next track':
