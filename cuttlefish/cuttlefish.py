@@ -5,6 +5,7 @@ import sys
 import os
 import inquirer
 from time import sleep
+from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
 
@@ -15,11 +16,13 @@ def main():
                     choices=[
                         'next track',
                         'currently playing',
+                        'current runtime',
                         'display on pi',
-                        'play music',
+                        'play/pause music',
                         'pause music',
                         'related artists',
-                        'user top tracks', 
+                        'similar to playing',
+                        'user top artists', 
                         'user playlists', 
                         'gen test oauth'
                         ],
@@ -29,6 +32,7 @@ def main():
     triageSelection(userSelect["initial_selection"])
 
 def authenticateSpotipyCreds():
+    setEnvVars()
     global sp
     global sessionUser
     auth_manager = SpotifyClientCredentials()
@@ -36,11 +40,19 @@ def authenticateSpotipyCreds():
     sessionUser = '73e213ujw0wxcy49bxwcfuhik'
 
 def authenticateSpotipyOauth(scope):
+    setEnvVars()
     global sp
     global sessionUser
     auth_manager = SpotifyClientCredentials()
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope,open_browser=False))
     sessionUser = '73e213ujw0wxcy49bxwcfuhik'
+
+def setEnvVars():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    load_dotenv(dir_path[:-11] + '/data/.env')
+    # env_cmd = 'source ' + dir_path[:-11] + '/data/.env'
+    # print(env_cmd)
+    # os.system(env_cmd)
 
 def listUserPlaylists():
     print("list playlists")
@@ -54,8 +66,8 @@ def listUserPlaylists():
         else:
             playlists = None
         
-def userTopTracks():
-    print("top tracks")
+def userTopArtists():
+    print("top artists")
     ranges = ['short_term', 'medium_term', 'long_term']
     for sp_range in ranges:
         print("range:", sp_range)
@@ -80,13 +92,42 @@ def relatedArtists():
     except BaseException:
         print("No related artists: " + artist_name)
 
+def similarArtists():
+    print("similar artists")
+    authenticateSpotipyCreds()
+    track = sp.current_user_playing_track()
+    artist_name = track['item']['artists'][0]['name']
+    result = sp.search(q='artist:' + artist_name, type='artist')
+    try:
+        name = result['artists']['items'][0]['name']
+        uri = result['artists']['items'][0]['uri']
+
+        related = sp.artist_related_artists(uri)
+        print('Related artists for', name)
+        for artist in related['artists']:
+            print('  ', artist['name'])
+    except BaseException:
+        print("No related artists: " + artist_name)
+
+def currentRuntime():
+    track = sp.current_user_playing_track()
+    if not track is None:
+        track_dur = track['item']['duration_ms']
+        track_pro = track['progress_ms']
+        print('Progress: ' + str(track_pro / track_dur))
+        print('Duration: ' + str(0.001 * track_dur) + ' - Progress: ' + str(0.001 * track_pro))
+    else:
+        print("No track currently playing.") 
+
+
 def currentlyPlaying():
     print("currently playing: \n")
     track = sp.current_user_playing_track()
+    album_size = 80
     def catImg(album_art):
         os.system('wget -q ' + album_art)
         os.system('mv ' + album_art[24:] + ' data/album_art_cache')
-        os.system('catimg -w 50 data/album_art_cache')
+        os.system('catimg -w ' + str(album_size) + ' data/album_art_cache')
     if not track is None:
         album_art = track['item']['album']['images'][0]['url']
         album_name = track['item']['album']['name']
@@ -146,13 +187,15 @@ def triageSelection(user_choice):
     authenticateSpotipyOauth(scopes)
     if user_choice == 'related artists':
         relatedArtists()
-    elif user_choice == 'user top tracks':
-        userTopTracks()
+    elif user_choice == 'similar to playing':
+        similarArtists()
+    elif user_choice == 'user top artists':
+        userTopArtists()
     elif user_choice == 'user playlists':
         listUserPlaylists()
     elif user_choice == 'currently playing':
         currentlyPlaying()
-    elif user_choice == 'play music':
+    elif user_choice == 'play/pause music':
         playPauseMusic()
     elif user_choice == 'display on pi':
         displayCuttlefish()
@@ -162,6 +205,8 @@ def triageSelection(user_choice):
         genTestOauth()
     elif user_choice == 'pause music':
         pauseMusic()
+    elif user_choice == 'current runtime':
+        currentRuntime()
     else:
         print(user_choice)
 
