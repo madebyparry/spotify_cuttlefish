@@ -174,16 +174,7 @@ def displayCuttlefish():
 
 
 def triageSelection(user_choice):
-    scopes = '''user-read-playback-state, 
-                user-modify-playback-state, 
-                user-read-currently-playing, 
-                user-top-read, 
-                streaming, 
-                playlist-read-private, 
-                user-follow-modify, 
-                user-read-recently-played, 
-                user-library-read
-            '''
+    scopes = 'user-read-playback-state, user-modify-playback-state,user-read-currently-playing,user-top-read,streaming,playlist-read-private,user-follow-modify,user-read-recently-played,user-library-read'
     authenticateSpotipyOauth(scopes)
     if user_choice == 'related artists':
         relatedArtists()
