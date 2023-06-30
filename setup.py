@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-from setuptools import setup
+import os 
 
-try:
-    # for pip >= 10
-    from pip._internal.req import parse_requirements
-except ImportError:
-    # for pip <= 9.0.3
-    from pip.req import parse_requirements
+def getDeps():
+    lib_folder = os.path.dirname(os.path.realpath(__file__))
+    requirement_path = lib_folder + '/requirements.txt'
+    os.system('pip install -r '  + requirement_path)
+    # install_requires = []
+    # if os.path.isfile(requirement_path):
+    #     with open(requirement_path) as f:
+    #         install_requires = f.read().splitlines()
+    # setup(install_requires=install_requires)
 
-def load_requirements(fname):
-    reqs = parse_requirements(fname, session="test")
-    return [str(ir.req) for ir in reqs]
-
-setup(name="spotify_cuttlefish", install_requires=load_requirements("requirements.txt"))
+getDeps()
