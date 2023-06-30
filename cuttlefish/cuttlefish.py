@@ -42,14 +42,17 @@ def authenticateSpotipyCreds():
 def authenticateSpotipyOauth(scope):
     setEnvVars()
     global sp
-    global sessionUser
     auth_manager = SpotifyClientCredentials()
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope,open_browser=False))
-    sessionUser = '73e213ujw0wxcy49bxwcfuhik'
 
 def setEnvVars():
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    load_dotenv(dir_path[:-11] + '/data/.env')
+    global sessionUser
+    sessionUser = '73e213ujw0wxcy49bxwcfuhik'
+    try:
+        load_dotenv(dir_path[:-11] + '/data/.env')
+    except:
+        print('data/.env data not set.')
     # env_cmd = 'source ' + dir_path[:-11] + '/data/.env'
     # print(env_cmd)
     # os.system(env_cmd)
@@ -201,4 +204,5 @@ def triageSelection(user_choice):
     else:
         print(user_choice)
 
-main()
+if __name__ == "__main__":
+    main()
