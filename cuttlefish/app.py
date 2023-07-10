@@ -18,7 +18,7 @@ from cuttlefish import similarArtists, currentlyPlaying, playPauseMusic, nextTra
 #   Heart button
 #
                                       
-led_one = LED(3)
+led_one = LED(2)
 btn_one = Button(4)
 btn_two = Button(17)
 btn_thr = Button(27)
@@ -44,6 +44,10 @@ def next():
         nextTrack()
         indicatorOne(3, 0.05)
 
+def related():
+    similarArtists()
+    indicatorOne(5, 0.25)
+
 def indicatorOne(c, t):
         led_one.on()
         i = 1
@@ -63,6 +67,7 @@ try:
         btn_one.when_pressed = playback
         btn_two.when_pressed = playing
         btn_thr.when_pressed = next
+        btn_for.when_pressed = related
         pause()
 finally:
     print("goodbye.")

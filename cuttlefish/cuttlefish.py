@@ -112,6 +112,18 @@ def similarArtists():
     except BaseException:
         print("No related artists: " + artist_name)
 
+def retCurrentRuntime():
+    track = sp.current_user_playing_track()
+    if not track is None:
+        ret = []
+        ret.append(round(track['progress_ms'] / 1000))
+        ret.append(round(track['item']['duration_ms'] / 1000))
+        return ret
+    else:
+        print("No track currently playing.") 
+
+
+
 def currentRuntime():
     track = sp.current_user_playing_track()
     if not track is None:
@@ -119,6 +131,18 @@ def currentRuntime():
         track_pro = track['progress_ms']
         print('Progress: ' + str(track_pro / track_dur))
         print('Duration: ' + str(0.001 * track_dur) + ' - Progress: ' + str(0.001 * track_pro))
+    else:
+        print("No track currently playing.") 
+
+
+def retCurrentlyPlaying():
+    track = sp.current_user_playing_track()
+    retTrack = []
+    if not track is None:
+        retTrack.append(track['item']['name'])
+        retTrack.append(track['item']['artists'][0]['name'])
+        retTrack.append(track['item']['album']['name'])
+        return retTrack
     else:
         print("No track currently playing.") 
 
