@@ -19,6 +19,7 @@ def main():
                         'currently playing',
                         'check wiki',
                         'current runtime',
+                        'play/pause music',
                         'next track',
                         'related artists',
                         'search related',
@@ -162,6 +163,7 @@ def currentlyPlaying():
 
 def printCurrentlyPlaying():
     playing = currentlyPlaying()
+    runtime = printCurrentRuntime()
     if 'no_track' in playing:
         print(playing['no_track'])
     else: 
@@ -173,9 +175,11 @@ def printCurrentlyPlaying():
         displayCatImg(playing['album_art'])
         print(playing['artist_name'] + " - " + playing['album_name'])
         print(playing['track_name'])
+        print(runtime)
+    main()
 
 
-def getWiki():
+def getWiki(addendums=False):
     # key returns
     #       artist_wiki._attributes
     #       artist_wiki.title
@@ -185,7 +189,22 @@ def getWiki():
     artist_name.replace(' ', '_')
     artist_wiki = wiki_wiki.page(artist_name)
     # handle exceptions:
-    if artist_wiki.exists() == False:
+    if addendums == True:
+        addendums = [
+            '(musician)',
+            '(band)'
+        ]
+        for i in addendums:
+            artist_name = artist_info['artist_name']
+            artist_name = artist_name + '_' + i
+            artist_wiki = wiki_wiki.page(artist_name)
+            if artist_wiki.exists():
+                return artist_wiki
+    if artist_wiki.exists() == True:
+        # Make more specific
+        # if artist_wiki.summary == artist_name + ' may refer to:':
+        return artist_wiki
+    else: 
         print('No wiki page found for ' + artist_name)
         print('Trying others...')
         known_exceptions = [
@@ -205,12 +224,12 @@ def getWiki():
                 artist_wiki = wiki_wiki.page(artist_name)
             if artist_wiki.exists():
                 return artist_wiki
-    else: 
-        return artist_wiki
-
 
 def printWikiResults():
     artist_wiki = getWiki()
+    if artist_wiki == None:
+        print('Could not find in Wikipedia - sorry!')
+        exit
     def sectionSelector():
         # Generate inquirer list for sections
         section_selections = []
@@ -222,34 +241,37 @@ def printWikiResults():
         return_tuple = ('-- RETURN --', 99)
         section_selections.append(return_tuple)
         sectionSelection = [
-        inquirer.List('selected_wiki_section',
-                        message="Select what you'd like to see more of:",
-                        choices=section_selections,
-                    ),
-        ]
+            inquirer.List('selected_wiki_section',
+                            message="More about " + artist_wiki.title + " :",
+                            choices=section_selections,
+                        ),
+            ]
         sectionSelected = inquirer.prompt(sectionSelection)
+        def printSectionsNested(sections):
+            for i in sections:
+                print('------- ' + i.title + ' -------')
+                printPretty(i.text, '\t')
+                printSectionsNested(i.sections)
         if sectionSelected['selected_wiki_section'] == 99:
             main()
         else:
             value = sectionSelected['selected_wiki_section']
             key = section_selections[value][0]
             # print(artist_wiki.section_by_title(key))
-            for i in artist_wiki.sections_by_title(key):
-                print(i.title)
-                printPretty(i.text)
-                try:
-                    for j in i.sections:
-                        print('\t' + j.title)
-                        print('\t', end='')
-                        printPretty(j.text)
-                except:
-                    print('no substr')
+            printSectionsNested(artist_wiki.sections_by_title(key))
             sectionSelector()
-    def printPretty(print_input):
+            
+    def printPretty(print_input, prepend=''):
         c = 0
+        print(prepend, end='')
         for i in print_input:
             if c > 100 and i == ' ':
                 print(i)
+                print(prepend, end='')
+                c = 0
+            elif i == '\n':
+                print(i, end='')
+                print(prepend, end='')
                 c = 0
             else:
                 print(i, end='')
@@ -289,18 +311,24 @@ def volumeControl():
 def triageSelection(user_choice):
     if user_choice == 'related artists':
         relatedArtists()
+        main()
     elif user_choice == 'search related':
         searchRelated()
+        main()
     elif user_choice == 'user top artists':
         userTopArtists()
+        main()
     elif user_choice == 'user playlists':
         listUserPlaylists()
+        main()
     elif user_choice == 'currently playing':
         printCurrentlyPlaying()
     elif user_choice == 'play/pause music':
         playPauseMusic()
+        main()
     elif user_choice == 'next track':
         nextTrack()
+        main()
     elif user_choice == 'current runtime':
         print(printCurrentRuntime())
     elif user_choice == 'check wiki':
