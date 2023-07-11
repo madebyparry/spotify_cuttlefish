@@ -4,6 +4,7 @@ import spotipy
 import sys
 import os
 import inquirer
+import wikipediaapi
 from time import sleep
 from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -15,17 +16,17 @@ def main():
     inquirer.List('initial_selection',
                     message="Cuttlefish options:",
                     choices=[
-                        'player app',
-                        'displayer app',
-                        'next track',
                         'currently playing',
+                        'check wiki',
                         'current runtime',
-                        'play/pause music',
-                        'pause music',
+                        'next track',
                         'related artists',
-                        'similar to playing',
+                        'search related',
                         'user top artists', 
                         'user playlists', 
+                        'player app',
+                        'displayer app',
+                        'shutdown'
                         ],
                 ),
     ]
@@ -57,7 +58,7 @@ def authenticateSpotipyOauth():
 
 def listUserPlaylists():
     print("list playlists")
-    authenticateSpotipyCreds()
+    # authenticateSpotipyCreds()
     playlists = sp.user_playlists(sessionUser)
     while playlists:
         for i, playlist in enumerate(playlists['items']):
@@ -77,7 +78,7 @@ def userTopArtists():
             print(i, item['name'])
         print()
 
-def relatedArtists():
+def searchRelated():
     print("related artists")
     artist_name = input("Related to whom? >> ")
     authenticateSpotipyCreds()
@@ -93,7 +94,7 @@ def relatedArtists():
     except BaseException:
         print("No related artists: " + artist_name)
 
-def similarArtists():
+def relatedArtists():
     print("similar artists")
     authenticateSpotipyCreds()
     track = sp.current_user_playing_track()
@@ -147,7 +148,6 @@ def printCurrentRuntime():
 
 def currentlyPlaying():
     track = sp.current_user_playing_track()
-    # 0, track name; 1, artist name; 2, album name
     playing = {}
     if not track is None:
         playing['album_art'] = track['item']['album']['images'][0]['url']
@@ -162,14 +162,111 @@ def currentlyPlaying():
 
 def printCurrentlyPlaying():
     playing = currentlyPlaying()
-    album_size = 80
-    def catImg(album_art):
-        os.system('wget -q ' + album_art)
-        os.system('mv ' + album_art[24:] + ' data/album_art_cache')
-        os.system('catimg -w ' + str(album_size) + ' data/album_art_cache')
-    catImg(playing['album_art'])
-    print(playing['artist_name'] + " - " + playing['album_name'])
-    print(playing['track_name'])
+    if 'no_track' in playing:
+        print(playing['no_track'])
+    else: 
+        album_size = 80
+        def displayCatImg(album_art):
+            os.system('wget -q ' + album_art)
+            os.system('mv ' + album_art[24:] + ' data/album_art_cache')
+            os.system('catimg -w ' + str(album_size) + ' data/album_art_cache')
+        displayCatImg(playing['album_art'])
+        print(playing['artist_name'] + " - " + playing['album_name'])
+        print(playing['track_name'])
+
+
+def getWiki():
+    # key returns
+    #       artist_wiki._attributes
+    #       artist_wiki.title
+    #       artist_wiki.summary
+    artist_info = currentlyPlaying()
+    artist_name = artist_info['artist_name']
+    artist_name.replace(' ', '_')
+    artist_wiki = wiki_wiki.page(artist_name)
+    # handle exceptions:
+    if artist_wiki.exists() == False:
+        print('No wiki page found for ' + artist_name)
+        print('Trying others...')
+        known_exceptions = [
+            'Jazztet',
+            'Septet',
+            'Sextet',
+            'Quartet',
+            'Quintet',
+            'Trio',
+            'And His Orchestra',
+            'Band'
+        ]
+        for i in known_exceptions:
+            if i in artist_name:
+                x = artist_name.find(i)
+                artist_name = artist_name.replace(i,'')
+                artist_wiki = wiki_wiki.page(artist_name)
+            if artist_wiki.exists():
+                return artist_wiki
+    else: 
+        return artist_wiki
+
+
+def printWikiResults():
+    artist_wiki = getWiki()
+    def sectionSelector():
+        # Generate inquirer list for sections
+        section_selections = []
+        c = 0
+        for i in artist_wiki.sections:
+            section_tuple = (i.title, c)
+            section_selections.append(section_tuple)
+            c += 1
+        return_tuple = ('-- RETURN --', 99)
+        section_selections.append(return_tuple)
+        sectionSelection = [
+        inquirer.List('selected_wiki_section',
+                        message="Select what you'd like to see more of:",
+                        choices=section_selections,
+                    ),
+        ]
+        sectionSelected = inquirer.prompt(sectionSelection)
+        if sectionSelected['selected_wiki_section'] == 99:
+            main()
+        else:
+            value = sectionSelected['selected_wiki_section']
+            key = section_selections[value][0]
+            # print(artist_wiki.section_by_title(key))
+            for i in artist_wiki.sections_by_title(key):
+                print(i.title)
+                printPretty(i.text)
+                try:
+                    for j in i.sections:
+                        print('\t' + j.title)
+                        print('\t', end='')
+                        printPretty(j.text)
+                except:
+                    print('no substr')
+            sectionSelector()
+    def printPretty(print_input):
+        c = 0
+        for i in print_input:
+            if c > 100 and i == ' ':
+                print(i)
+                c = 0
+            else:
+                print(i, end='')
+                c += 1
+        print('\n')
+    # Wiki logic
+    if artist_wiki != None:
+        print('\n')
+        # print(artist_wiki._attributes)
+        print("Page found: %s" % artist_wiki.title)
+        print(artist_wiki.fullurl)
+        print('\n')
+        printPretty(artist_wiki.summary)
+        sectionSelector()
+    else:
+        print('Could not find in Wikipedia - sorry!')
+
 
 def playPauseMusic():
     track = sp.currently_playing()
@@ -177,12 +274,6 @@ def playPauseMusic():
         sp.start_playback()
     else: 
         sp.pause_playback()
-
-def playMusic():
-    sp.start_playback()
-
-def pauseMusic():
-    sp.pause_playback()
 
 def nextTrack():
 	sp.next_track()
@@ -198,24 +289,31 @@ def volumeControl():
 def triageSelection(user_choice):
     if user_choice == 'related artists':
         relatedArtists()
-    elif user_choice == 'similar to playing':
-        similarArtists()
+    elif user_choice == 'search related':
+        searchRelated()
     elif user_choice == 'user top artists':
         userTopArtists()
     elif user_choice == 'user playlists':
         listUserPlaylists()
     elif user_choice == 'currently playing':
-        print(printCurrentlyPlaying())
+        printCurrentlyPlaying()
     elif user_choice == 'play/pause music':
         playPauseMusic()
     elif user_choice == 'next track':
         nextTrack()
-    elif user_choice == 'pause music':
-        pauseMusic()
     elif user_choice == 'current runtime':
         print(printCurrentRuntime())
+    elif user_choice == 'check wiki':
+        printWikiResults()
+    elif user_choice == 'shutdown':
+        print('Bye-bye!')
+        return
     else:
         print(user_choice)
+        print('Bye-bye!')
+        return
+
+wiki_wiki = wikipediaapi.Wikipedia('Spotify Cuttlefish (nicholas@madebyparry.com)', 'en')
 
 if __name__ == "__main__":
     main()
