@@ -35,24 +35,8 @@ DC = 23
 SPI_PORT = 0
 SPI_DEVICE = 0
 
-# Beaglebone Black pin configuration:
-# RST = 'P9_12'
-# Note the following are only used with SPI:
-# DC = 'P9_15'
-# SPI_PORT = 1
-# SPI_DEVICE = 0
-
 # 128x32 display with hardware I2C:
 disp = Adafruit_SSD1306.SSD1306_128_32(rst=RST)
-
-# 128x64 display with hardware I2C:
-# disp = Adafruit_SSD1306.SSD1306_128_64(rst=RST)
-
-# 128x32 display with hardware SPI:
-# disp = Adafruit_SSD1306.SSD1306_128_32(rst=RST, dc=DC, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=8000000))
-
-# 128x64 display with hardware SPI:
-# disp = Adafruit_SSD1306.SSD1306_128_64(rst=RST, dc=DC, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=8000000))
 
 # Initialize library.
 disp.begin()
@@ -67,27 +51,39 @@ height = disp.height
 image = Image.new('1', (width, height))
 draw = ImageDraw.Draw(image)
 font = ImageFont.load_default()
-scopes = 'user-read-playback-state, user-modify-playback-state,user-read-currently-playing,user-top-read,streaming,playlist-read-private,user-follow-modify,user-read-recently-played,user-library-read'
-cuttlefish.authenticateSpotipyOauth(scopes)
-cache = cuttlefish.genTestOauth()
+
+# Authenticate spotipy
+cuttlefish.authenticateSpotipyOauth()
 
 # First define some constants to allow easy resizing of shapes.
 padding = 0 
 top = padding
 bottom = height-padding
 x = 0
+
+def splashScreen():
+    draw.text((x, top + 8), 'Sportify Cuttlefish', font=font, fill=255)
+    draw.text((x, top + 16), 'MadeByParry', font=font, fill=255)
+    time.sleep(2)
+
 def displayInfo():
     draw.rectangle((0,0,width,height), outline=0, fill=0)
     track_info = cuttlefish.retCurrentlyPlaying()
-    track_dur = cuttlefish.retCurrentRuntime()
+    track_time = cuttlefish.printCurrentRuntime()
     draw.text((x, top), track_info[1], font=font, fill=255)
     draw.text((x, top + 8), track_info[0], font=font, fill=255)
     draw.text((x, top + 16), track_info[2], font=font, fill=255)
-    draw.text((x, top + 24), str(track_dur[0]) + ':' + str(track_dur[0] % 60) + '/' + str(track_dur[1]) + ':' + str(track_dur[1] % 60), font=font, fill=255)
+    draw.text((x, top + 24), 
+              track_time, 
+              font=font, 
+              fill=255
+              )
     disp.image(image)
     disp.display()
     time.sleep(1) 
- 
+
+splashScreen()
+
 while True:
     try:
         displayInfo()

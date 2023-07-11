@@ -10,52 +10,50 @@ from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
 
 def main():
+    authenticateSpotipyOauth()
     initialSelection = [
     inquirer.List('initial_selection',
                     message="Cuttlefish options:",
                     choices=[
+                        'player app',
+                        'displayer app',
                         'next track',
                         'currently playing',
                         'current runtime',
-                        'display on pi',
                         'play/pause music',
                         'pause music',
                         'related artists',
                         'similar to playing',
                         'user top artists', 
                         'user playlists', 
-                        'gen test oauth'
                         ],
                 ),
     ]
     userSelect = inquirer.prompt(initialSelection)
     triageSelection(userSelect["initial_selection"])
 
-def authenticateSpotipyCreds():
-    setEnvVars()
-    global sp
-    global sessionUser
-    auth_manager = SpotifyClientCredentials()
-    sp = spotipy.Spotify(auth_manager=auth_manager)
-    sessionUser = '73e213ujw0wxcy49bxwcfuhik'
-
-def authenticateSpotipyOauth(scope):
-    setEnvVars()
-    global sp
-    auth_manager = SpotifyClientCredentials()
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope,open_browser=False))
-
 def setEnvVars():
-    dir_path = os.path.dirname(os.path.realpath(__file__))
     global sessionUser
+    dir_path = os.path.dirname(os.path.realpath(__file__))
     sessionUser = '73e213ujw0wxcy49bxwcfuhik'
     try:
         load_dotenv(dir_path[:-11] + '/data/.env')
     except:
         print('data/.env data not set.')
-    # env_cmd = 'source ' + dir_path[:-11] + '/data/.env'
-    # print(env_cmd)
-    # os.system(env_cmd)
+
+def authenticateSpotipyCreds():
+    setEnvVars()
+    global sp
+    auth_manager = SpotifyClientCredentials()
+    sp = spotipy.Spotify(auth_manager=auth_manager)
+
+def authenticateSpotipyOauth():
+    scope = 'user-read-playback-state, user-modify-playback-state,user-read-currently-playing,user-top-read,streaming,playlist-read-private,user-follow-modify,user-read-recently-played,user-library-read'
+    setEnvVars()
+    global sp
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope,open_browser=False))
+    sp.devices()
+
 
 def listUserPlaylists():
     print("list playlists")
@@ -112,59 +110,66 @@ def similarArtists():
     except BaseException:
         print("No related artists: " + artist_name)
 
-def retCurrentRuntime():
-    track = sp.current_user_playing_track()
-    if not track is None:
-        ret = []
-        ret.append(round(track['progress_ms'] / 1000))
-        ret.append(round(track['item']['duration_ms'] / 1000))
-        return ret
-    else:
-        print("No track currently playing.") 
-
-
 
 def currentRuntime():
     track = sp.current_user_playing_track()
+    def readableTime(ms):
+        time = []
+        x = ms / 1000
+        seconds = x % 60
+        x /= 60
+        minutes = x % 60
+        time.append(seconds)
+        time.append(minutes)
+        return time
     if not track is None:
-        track_dur = track['item']['duration_ms']
-        track_pro = track['progress_ms']
-        print('Progress: ' + str(track_pro / track_dur))
-        print('Duration: ' + str(0.001 * track_dur) + ' - Progress: ' + str(0.001 * track_pro))
+        times = {}
+        progress = readableTime(track['progress_ms'])
+        duration = readableTime(track['item']['duration_ms'])
+        times['progress_seconds'] = round(progress[0])
+        times['progress_minutes'] = round(progress[1])
+        times['duration_seconds'] = round(duration[0])
+        times['duration_minutes'] = round(duration[1])
+        return times
     else:
-        print("No track currently playing.") 
+        return "No track currently playing." 
 
 
-def retCurrentlyPlaying():
-    track = sp.current_user_playing_track()
-    retTrack = []
-    if not track is None:
-        retTrack.append(track['item']['name'])
-        retTrack.append(track['item']['artists'][0]['name'])
-        retTrack.append(track['item']['album']['name'])
-        return retTrack
-    else:
-        print("No track currently playing.") 
 
+def printCurrentRuntime():
+    track_time = currentRuntime()
+    running_time_sec = str(track_time['progress_seconds'])
+    running_time_min = str(track_time['progress_minutes'])
+    total_time_sec = str(track_time['duration_seconds'])
+    total_time_min = str(track_time['duration_minutes'])
+    pretty_print_time = running_time_min + ':' + running_time_sec + '/' + total_time_min + ':' + total_time_sec
+    return pretty_print_time    
 
 def currentlyPlaying():
-    print("currently playing: \n")
     track = sp.current_user_playing_track()
+    # 0, track name; 1, artist name; 2, album name
+    playing = {}
+    if not track is None:
+        playing['album_art'] = track['item']['album']['images'][0]['url']
+        playing['track_name'] = track['item']['name']
+        playing['artist_name'] = track['item']['artists'][0]['name']
+        playing['album_name'] = track['item']['album']['name']
+        return playing
+    else:
+        playing['no_track'] = 'no track found :('
+        return playing
+
+
+def printCurrentlyPlaying():
+    playing = currentlyPlaying()
     album_size = 80
     def catImg(album_art):
         os.system('wget -q ' + album_art)
         os.system('mv ' + album_art[24:] + ' data/album_art_cache')
         os.system('catimg -w ' + str(album_size) + ' data/album_art_cache')
-    if not track is None:
-        album_art = track['item']['album']['images'][0]['url']
-        album_name = track['item']['album']['name']
-        artist_name = track['item']['artists'][0]['name']
-        track_name = track['item']['name']
-        catImg(album_art)
-        print(artist_name + " - " + album_name)
-        print(track_name)
-    else:
-        print("No track currently playing.") 
+    catImg(playing['album_art'])
+    print(playing['artist_name'] + " - " + playing['album_name'])
+    print(playing['track_name'])
 
 def playPauseMusic():
     track = sp.currently_playing()
@@ -189,20 +194,8 @@ def volumeControl():
     sleep(2)
     sp.volume(100)
         
-def genTestOauth():
-    displayCuttlefish()
-    print(".cache generated")
-
-
-def displayCuttlefish():
-    pi_name = "192.168.0.201"
-    print(pi_name)
-    print(sp.devices())
-
 
 def triageSelection(user_choice):
-    scopes = 'user-read-playback-state, user-modify-playback-state,user-read-currently-playing,user-top-read,streaming,playlist-read-private,user-follow-modify,user-read-recently-played,user-library-read'
-    authenticateSpotipyOauth(scopes)
     if user_choice == 'related artists':
         relatedArtists()
     elif user_choice == 'similar to playing':
@@ -212,19 +205,15 @@ def triageSelection(user_choice):
     elif user_choice == 'user playlists':
         listUserPlaylists()
     elif user_choice == 'currently playing':
-        currentlyPlaying()
+        print(printCurrentlyPlaying())
     elif user_choice == 'play/pause music':
         playPauseMusic()
-    elif user_choice == 'display on pi':
-        displayCuttlefish()
     elif user_choice == 'next track':
         nextTrack()
-    elif user_choice == 'gen test oauth':
-        genTestOauth()
     elif user_choice == 'pause music':
         pauseMusic()
     elif user_choice == 'current runtime':
-        currentRuntime()
+        print(printCurrentRuntime())
     else:
         print(user_choice)
 
