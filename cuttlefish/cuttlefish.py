@@ -36,8 +36,10 @@ def main():
 
 def setEnvVars():
     global sessionUser
+    global wiki_wiki
     dir_path = os.path.dirname(os.path.realpath(__file__))
     sessionUser = '73e213ujw0wxcy49bxwcfuhik'
+    wiki_wiki = wikipediaapi.Wikipedia('Spotify Cuttlefish (nicholas@madebyparry.com)', 'en')
     try:
         load_dotenv(dir_path[:-11] + '/data/.env')
     except:
@@ -341,7 +343,6 @@ def triageSelection(user_choice):
         print('Bye-bye!')
         return
 
-wiki_wiki = wikipediaapi.Wikipedia('Spotify Cuttlefish (nicholas@madebyparry.com)', 'en')
 
 if __name__ == "__main__":
     main()
