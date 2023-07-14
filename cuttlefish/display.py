@@ -22,8 +22,9 @@ import time
 
 import Adafruit_GPIO.SPI as SPI
 import Adafruit_SSD1306
-import cuttlefish
-
+from cuttlefish import currentlyPlaying, printCurrentlyPlaying, currentRuntime, relatedArtists, authenticateSpotipyOauth, playPauseMusic, nextTrack
+from gpiozero import MCP3008, LED, Button
+from threading import Thread
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
@@ -34,6 +35,9 @@ RST = 24
 DC = 23
 SPI_PORT = 0
 SPI_DEVICE = 0
+
+#set potentiometer pin
+pot = MCP3008(0)
 
 # 128x32 display with hardware I2C:
 disp = Adafruit_SSD1306.SSD1306_128_32(rst=RST)
@@ -53,7 +57,7 @@ draw = ImageDraw.Draw(image)
 font = ImageFont.load_default()
 
 # Authenticate spotipy
-cuttlefish.authenticateSpotipyOauth()
+authenticateSpotipyOauth()
 
 # First define some constants to allow easy resizing of shapes.
 padding = 0 
@@ -61,35 +65,73 @@ top = padding
 bottom = height-padding
 x = 0
 
-def splashScreen():
-    draw.text((x, top + 8), 'Sportify Cuttlefish', font=font, fill=255)
-    draw.text((x, top + 16), 'MadeByParry', font=font, fill=255)
-    time.sleep(2)
+#buttons 
+led_one = LED(26)
+btn_one = Button(19)
+btn_two = Button(13)
+btn_thr = Button(6)
+btn_for = Button(5)
+
+#button controls
+def blink(num, t):
+        i = 0
+        while i < num:
+                led_one.on()
+                time.sleep(t)
+                led_one.off()
+                time.sleep(t)
+                i = i + 1
+
+def playback():
+    playPauseMusic()
+    blink(1, 0.5)
+
+def playing():
+    currentlyPlaying()
+    printCurrentlyPlaying()
+    blink(3, 0.2)
+
+def nextButton():
+    nextTrack()
+    blink(2, 0.02)
+
+def related():
+    blink(5, 0.1)
+    relatedArtists()
 
 def displayInfo():
+    vol = round(pot.value, 1) * 10
     draw.rectangle((0,0,width,height), outline=0, fill=0)
-    track_info = cuttlefish.retCurrentlyPlaying()
-    track_time = cuttlefish.printCurrentRuntime()
-    draw.text((x, top), track_info[1], font=font, fill=255)
-    draw.text((x, top + 8), track_info[0], font=font, fill=255)
-    draw.text((x, top + 16), track_info[2], font=font, fill=255)
-    draw.text((x, top + 24), 
-              track_time, 
-              font=font, 
-              fill=255
-              )
+    track_info = currentlyPlaying()
+    track_time = currentRuntime()
+    draw.text((x, top), track_info['track_name'], font=font, fill=255)
+    draw.text((x, top + 8), track_info['artist_name'], font=font, fill=255)
+    draw.text((x, top + 16), track_info['album_name'], font=font, fill=255)
+    draw.text((x, top + 24), 'vol:' + ('#' * int(vol)), font=font, fill=255)
     disp.image(image)
     disp.display()
-    time.sleep(1) 
 
-splashScreen()
+def buttonDaemon():
+    while True:
+        if btn_one.is_pressed:
+            playback()
+        if btn_two.is_pressed:
+            playing()
+        if btn_thr.is_pressed:
+            nextButton()
+        if btn_for.is_pressed:
+            related()
+        time.sleep(0.1) 
+
+daemon = Thread(target=buttonDaemon, daemon=True, name='Button Monitor')
+daemon.start()
 
 while True:
     try:
         displayInfo()
+        time.sleep(0.5) 
     except: 
-        print('beep - no track')
         time.sleep(2)
         displayInfo()
 else:
-    print('boop - done')
+        print('boop - done')

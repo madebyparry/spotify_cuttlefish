@@ -178,7 +178,6 @@ def printCurrentlyPlaying():
         print(playing['artist_name'] + " - " + playing['album_name'])
         print(playing['track_name'])
         print(runtime)
-    main()
 
 
 def getWiki(addendums=False):
@@ -325,6 +324,7 @@ def triageSelection(user_choice):
         main()
     elif user_choice == 'currently playing':
         printCurrentlyPlaying()
+        main()
     elif user_choice == 'play/pause music':
         playPauseMusic()
         main()
