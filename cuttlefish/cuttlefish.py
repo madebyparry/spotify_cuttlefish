@@ -226,42 +226,23 @@ def getWiki(addendums=False):
             if artist_wiki.exists():
                 return artist_wiki
 
-def printWikiResults():
-    artist_wiki = getWiki()
-    if artist_wiki == None:
-        print('Could not find in Wikipedia - sorry!')
-        exit
-    def sectionSelector():
-        # Generate inquirer list for sections
-        section_selections = []
-        c = 0
-        for i in artist_wiki.sections:
-            section_tuple = (i.title, c)
-            section_selections.append(section_tuple)
-            c += 1
-        return_tuple = ('-- RETURN --', 99)
-        section_selections.append(return_tuple)
-        sectionSelection = [
-            inquirer.List('selected_wiki_section',
-                            message="More about " + artist_wiki.title + " :",
-                            choices=section_selections,
-                        ),
-            ]
-        sectionSelected = inquirer.prompt(sectionSelection)
-        def printSectionsNested(sections):
-            for i in sections:
-                print('------- ' + i.title + ' -------')
-                printPretty(i.text, '\t')
-                printSectionsNested(i.sections)
-        if sectionSelected['selected_wiki_section'] == 99:
-            main()
-        else:
-            value = sectionSelected['selected_wiki_section']
-            key = section_selections[value][0]
-            # print(artist_wiki.section_by_title(key))
-            printSectionsNested(artist_wiki.sections_by_title(key))
-            sectionSelector()
-            
+def wikiSectionSelector(artist_wiki):
+    # Generate inquirer list for sections
+    section_selections = []
+    c = 0
+    for i in artist_wiki.sections:
+        section_tuple = (i.title, c)
+        section_selections.append(section_tuple)
+        c += 1
+    return_tuple = ('-- RETURN --', 99)
+    section_selections.append(return_tuple)
+    sectionSelection = [
+        inquirer.List('selected_wiki_section',
+                        message="More about " + artist_wiki.title + " :",
+                        choices=section_selections,
+                    ),
+        ]
+    sectionSelected = inquirer.prompt(sectionSelection)
     def printPretty(print_input, prepend=''):
         c = 0
         print(prepend, end='')
@@ -286,9 +267,30 @@ def printWikiResults():
         print(artist_wiki.fullurl)
         print('\n')
         printPretty(artist_wiki.summary)
-        sectionSelector()
+        wikiSectionSelector()
     else:
         print('Could not find in Wikipedia - sorry!')
+    def printSectionsNested(sections):
+        for i in sections:
+            print('------- ' + i.title + ' -------')
+            printPretty(i.text, '\t')
+            printSectionsNested(i.sections)
+    if sectionSelected['selected_wiki_section'] == 99:
+        main()
+    else:
+        value = sectionSelected['selected_wiki_section']
+        key = section_selections[value][0]
+        # print(artist_wiki.section_by_title(key))
+        printSectionsNested(artist_wiki.sections_by_title(key))
+        wikiSectionSelector()
+
+def printWikiResults():
+    global artist_wiki
+    artist_wiki = getWiki()
+    print(artist_wiki.summary)
+    if artist_wiki == None:
+        print('Could not find in Wikipedia - sorry!')
+
 
 
 def playPauseMusic():
@@ -335,6 +337,7 @@ def triageSelection(user_choice):
         print(printCurrentRuntime())
     elif user_choice == 'check wiki':
         printWikiResults()
+        wikiSectionSelector(artist_wiki)
     elif user_choice == 'shutdown':
         print('Bye-bye!')
         return
