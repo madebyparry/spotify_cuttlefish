@@ -1,28 +1,32 @@
-# Copyright (c) 2014 Adafruit Industries
-# Author: Tony DiCola
+# 
+#   Button pinout 
+#     (Based on pin location)
+#   Screen:
+#       VCC - (1)
+#       GRND - (6)
+#       SDA - (5)
+#       SCL - (7)
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+#   MCP3008:
+#       13 - (23)
+#       12 - (21)
+#       11 - (19)
+#       10 - (24)
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+#   Others:
+#       LED - (37)
+#       Bn1 - (35)
+#       Bn2 - (33)
+#       Bn3 - (31)
+#       Bn4 - (29)
+#       Bn5 - (36)
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+
 import time
 
 import Adafruit_GPIO.SPI as SPI
 import Adafruit_SSD1306
-from cuttlefish import currentlyPlaying, printCurrentlyPlaying, currentRuntime, relatedArtists, authenticateSpotipyOauth, playPauseMusic, nextTrack
+from cuttlefish import printWikiResults, currentlyPlaying, printCurrentlyPlaying, currentRuntime, relatedArtists, authenticateSpotipyOauth, playPauseMusic, nextTrack
 from gpiozero import MCP3008, LED, Button
 from threading import Thread
 from PIL import Image
@@ -71,6 +75,7 @@ btn_one = Button(19)
 btn_two = Button(13)
 btn_thr = Button(6)
 btn_for = Button(5)
+btn_fiv = Button(16)
 
 #button controls
 def blink(num, t):
@@ -99,6 +104,10 @@ def related():
     blink(5, 0.1)
     relatedArtists()
 
+def wikiTime():
+     blink(4, 0.3)
+     printWikiResults()
+
 def displayInfo():
     vol = round(pot.value, 1) * 10
     draw.rectangle((0,0,width,height), outline=0, fill=0)
@@ -121,6 +130,8 @@ def buttonDaemon():
             nextButton()
         if btn_for.is_pressed:
             related()
+        if btn_fiv.is_pressed:
+            wikiTime()
         time.sleep(0.1) 
 
 daemon = Thread(target=buttonDaemon, daemon=True, name='Button Monitor')
