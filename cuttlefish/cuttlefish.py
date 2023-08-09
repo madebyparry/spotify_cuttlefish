@@ -202,10 +202,10 @@ def getWiki(addendums=False):
             if artist_wiki.exists():
                 return artist_wiki
     if artist_wiki.exists() == True:
-        # Make more specific
-        # if artist_wiki.summary == artist_name + ' may refer to:':
         return artist_wiki
     else: 
+        # Make more specific
+        # if artist_wiki.summary == artist_name + ' may refer to:':
         print('No wiki page found for ' + artist_name)
         print('Trying others...')
         known_exceptions = [
@@ -260,16 +260,6 @@ def wikiSectionSelector(artist_wiki):
                 c += 1
         print('\n')
     # Wiki logic
-    if artist_wiki != None:
-        print('\n')
-        # print(artist_wiki._attributes)
-        print("Page found: %s" % artist_wiki.title)
-        print(artist_wiki.fullurl)
-        print('\n')
-        printPretty(artist_wiki.summary)
-        wikiSectionSelector()
-    else:
-        print('Could not find in Wikipedia - sorry!')
     def printSectionsNested(sections):
         for i in sections:
             print('------- ' + i.title + ' -------')
@@ -282,7 +272,7 @@ def wikiSectionSelector(artist_wiki):
         key = section_selections[value][0]
         # print(artist_wiki.section_by_title(key))
         printSectionsNested(artist_wiki.sections_by_title(key))
-        wikiSectionSelector()
+        wikiSectionSelector(artist_wiki)
 
 def printWikiResults():
     global artist_wiki
