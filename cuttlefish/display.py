@@ -1,25 +1,25 @@
 # 
 #   Button pinout 
-#     (Based on pin location)
+#     (Based on pin location)[GPIO Number]
 #   Screen:
-#       VCC - (1)
-#       GRND - (6)
-#       SDA - (5)
-#       SCL - (7)
+#       VCC - (1)[3v3]
+#       GRND - (6)[GRND]
+#       SDA - (5)[3]
+#       SCL - (7)[4]
 #
 #   MCP3008:
-#       13 - (23)
-#       12 - (21)
-#       11 - (19)
-#       10 - (24)
+#       13 - (23)[11]
+#       12 - (21)[9]
+#       11 - (19)[10]
+#       10 - (24)[8]
 #
 #   Others:
-#       LED - (37)
-#       Bn1 - (35)
-#       Bn2 - (33)
-#       Bn3 - (31)
-#       Bn4 - (29)
-#       Bn5 - (36)
+#       LED - (37)[26]
+#       Bn1 - (35)[19]
+#       Bn2 - (33)[13]
+#       Bn3 - (31)[6]
+#       Bn4 - (29)[5]
+#       Bn5 - (36)[16]
 #
 
 import time
