@@ -26,7 +26,8 @@ import time
 
 import Adafruit_GPIO.SPI as SPI
 import Adafruit_SSD1306
-from cuttlefish import setEnvVars, currentlyPlaying, printCurrentlyPlaying, currentRuntime, relatedArtists, playPauseMusic, nextTrack
+from cuttlefish import setEnvVars, currentlyPlaying, printCurrentlyPlaying, currentRuntime, relatedArtists, playPauseMusic, nextTrack, sanitizeNamesUTF
+from cf_wiki import getWikiSelection, printWikiResults
 from gpiozero import MCP3008, LED, Button
 from threading import Thread
 from PIL import Image
@@ -106,16 +107,16 @@ def related():
 
 def wikiTime():
      blink(4, 0.3)
-     printWikiResults()
+     printWikiResults(currentlyPlaying())
 
 def displayInfo():
     vol = round(pot.value, 1) * 10
     draw.rectangle((0,0,width,height), outline=0, fill=0)
     track_info = currentlyPlaying()
     track_time = currentRuntime()
-    draw.text((x, top), track_info['track_name'], font=font, fill=255)
-    draw.text((x, top + 8), track_info['artist_name'], font=font, fill=255)
-    draw.text((x, top + 16), track_info['album_name'], font=font, fill=255)
+    draw.text((x, top), sanitizeNamesUTF(track_info['track_name']), font=font, fill=255)
+    draw.text((x, top + 8), sanitizeNamesUTF(track_info['artist_name']), font=font, fill=255)
+    draw.text((x, top + 16), sanitizeNamesUTF(track_info['album_name']), font=font, fill=255)
     draw.text((x, top + 24), 'vol:' + ('#' * int(vol)), font=font, fill=255)
     disp.image(image)
     disp.display()

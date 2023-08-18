@@ -69,6 +69,7 @@ def wikiSectionsGenerate(artist_wiki):
 
 def printWikiResults(artist_wiki):
     # artist_wiki = getWiki(playing)
+    artist_wiki = getWikiSelection(artist_wiki)
     print(artist_wiki.summary)
     return artist_wiki
 

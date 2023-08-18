@@ -5,6 +5,7 @@ import sys
 import os
 import inquirer
 from cf_wiki import wikiSectionsGenerate, wikiSummary, getWikiSelection
+from random import randint
 from time import sleep
 from dotenv import load_dotenv, dotenv_values
 from spotipy import oauth2
@@ -24,6 +25,7 @@ def main():
                         'current runtime',
                         'play/pause music',
                         'next track',
+                        'recommendations',
                         'related artists',
                         'search related',
                         'user top artists', 
@@ -99,15 +101,27 @@ def listUserPlaylists():
         else:
             playlists = None
         
-def userTopArtists():
-    print("top artists")
+def userTopArtists(ranges = ['short_term', 'medium_term', 'long_term']):
+    top_artists = []
+    results = sp.current_user_top_artists(time_range=ranges, limit=50)
+    for i, item in enumerate(results['items']):
+        top_artists.append(item['name'])
+    return top_artists
+    
+def printUserTopArtists():
     ranges = ['short_term', 'medium_term', 'long_term']
-    for sp_range in ranges:
-        print("range:", sp_range)
-        results = sp.current_user_top_artists(time_range=sp_range, limit=50)
-        for i, item in enumerate(results['items']):
-            print(i, item['name'])
+    print("Your top artists:")
+    for i in ranges:
+        top_artists = userTopArtists(i)
+        print('\n-----------------')
+        print('Range: ' + i)
+        print('-----------------\n')
+        c = 1
+        for i in top_artists:
+            print('\t', str(c) + ':', i)
+            c += 1
         print()
+    print()
 
 def searchRelated():
     print("related artists")
@@ -126,10 +140,9 @@ def searchRelated():
         print("No related artists: " + artist_name)
 
 def relatedArtists():
-    print("similar artists")
+    playing = currentlyPlaying()
+    artist_name = playing['artist_name']
     authenticateSpotipyCreds()
-    track = sp.current_user_playing_track()
-    artist_name = track['item']['artists'][0]['name']
     result = sp.search(q='artist:' + artist_name, type='artist')
     try:
         name = result['artists']['items'][0]['name']
@@ -137,11 +150,54 @@ def relatedArtists():
 
         related = sp.artist_related_artists(uri)
         print('Related artists for', name)
+        print()
         for artist in related['artists']:
             print('  ', artist['name'])
-    except BaseException:
+        print('\n-----------------------------\n')
+        sleep(1)
+    except:
         print("No related artists: " + artist_name)
+        print()
 
+def searchArtistRecommendation():
+    print('Note: Enter "no" for random')
+    user_in = input('Any starting artist for the recommendations? >> ')
+    if user_in == 'no' or user_in == '':
+        tops = userTopArtists(['short_term'])
+        return tops[randint(0,len(tops)-1)]
+    else:
+        return user_in
+
+def recommendFromArtist(artist_name):
+    results = sp.search(q='artist:' + artist_name, type='artist')
+    items = results['artists']['items']
+    print("We'll try to find some recs for " + artist_name)
+    authenticateSpotipyCreds()
+    if len(items) > 0:
+        results = sp.recommendations(seed_artists=[items[0]['id']])
+        c = 0
+        rec_list = []
+        for track in results['tracks']:
+            rec_line = str(c) + ': ' + track['name'] + ' - ' + track['artists'][0]['name']
+            print(rec_line)
+            rec_list.append(rec_line)
+            c += 1
+        rec_list.append('-----------------')
+        saveThemRecs(rec_list)
+    else:
+        print('Seems like there is no recommendations found for ' + artist_name)
+        print()
+
+def saveThemRecs(recs):
+    data_root = os.path.expanduser('~') + '/spotify_cuttlefish/data/'
+    recs_file = data_root + 'recommendations.txt'
+    with open(recs_file, "a") as f:
+        try:
+            for i in recs:
+                f.write("%s\n" % i)
+        except:
+            print("Recommendations file is not found: ")
+            print(recs_file)
 
 def currentRuntime():
     track = sp.current_user_playing_track()
@@ -214,108 +270,6 @@ def printCurrentlyPlaying():
         print('| No track currently playing.')
         print('| ----------------------------------\n')
         sleep(1)
-
-
-# def getWiki(addendums=False):
-#     # key returns
-#     #       artist_wiki._attributes
-#     #       artist_wiki.title
-#     #       artist_wiki.summary
-#     artist_info = currentlyPlaying()
-#     artist_name = artist_info['artist_name']
-#     artist_name.replace(' ', '_')
-#     artist_wiki = wiki_wiki.page(artist_name)
-#     # handle exceptions:
-#     if addendums == True:
-#         addendums = [
-#             '(musician)',
-#             '(band)'
-#         ]
-#         for i in addendums:
-#             artist_name = artist_info['artist_name']
-#             artist_name = artist_name + '_' + i
-#             artist_wiki = wiki_wiki.page(artist_name)
-#             if artist_wiki.exists():
-#                 return artist_wiki
-#     if artist_wiki.exists() == True:
-#         return artist_wiki
-#     else: 
-#         # Make more specific
-#         # if artist_wiki.summary == artist_name + ' may refer to:':
-#         print('No wiki page found for ' + artist_name)
-#         print('Trying others...')
-#         known_exceptions = [
-#             'Jazztet',
-#             'Septet',
-#             'Sextet',
-#             'Quartet',
-#             'Quintet',
-#             'Trio',
-#             'And His Orchestra',
-#             'Band'
-#         ]
-#         for i in known_exceptions:
-#             if i in artist_name:
-#                 x = artist_name.find(i)
-#                 artist_name = artist_name.replace(i,'')
-#                 artist_wiki = wiki_wiki.page(artist_name)
-#             if artist_wiki.exists():
-#                 return artist_wiki
-
-# def wikiSectionSelector(artist_wiki):
-#     # Generate inquirer list for sections
-#     section_selections = []
-#     c = 0
-#     for i in artist_wiki.sections:
-#         section_tuple = (i.title, c)
-#         section_selections.append(section_tuple)
-#         c += 1
-#     return_tuple = ('-- RETURN --', 99)
-#     section_selections.append(return_tuple)
-#     sectionSelection = [
-#         inquirer.List('selected_wiki_section',
-#                         message="More about " + artist_wiki.title + " :",
-#                         choices=section_selections,
-#                     ),
-#         ]
-#     sectionSelected = inquirer.prompt(sectionSelection)
-#     def printPretty(print_input, prepend=''):
-#         c = 0
-#         print(prepend, end='')
-#         for i in print_input:
-#             if c > 100 and i == ' ':
-#                 print(i)
-#                 print(prepend, end='')
-#                 c = 0
-#             elif i == '\n':
-#                 print(i, end='')
-#                 print(prepend, end='')
-#                 c = 0
-#             else:
-#                 print(i, end='')
-#                 c += 1
-#         print('\n')
-#     # Wiki logic
-#     def printSectionsNested(sections):
-#         for i in sections:
-#             print('------- ' + i.title + ' -------')
-#             printPretty(i.text, '\t')
-#             printSectionsNested(i.sections)
-#     if sectionSelected['selected_wiki_section'] == 99:
-#         main()
-#     else:
-#         value = sectionSelected['selected_wiki_section']
-#         key = section_selections[value][0]
-#         # print(artist_wiki.section_by_title(key))
-#         printSectionsNested(artist_wiki.sections_by_title(key))
-#         wikiSectionSelector(artist_wiki)
-
-# def printWikiResults():
-#     global artist_wiki
-#     artist_wiki = getWiki()
-#     print(artist_wiki.summary)
-#     if artist_wiki == None:
-#         print('Could not find in Wikipedia - sorry!')
 
 def printPretty(print_input, prepend=''):
     c = 0
@@ -400,8 +354,11 @@ def triageSelection(user_choice):
     elif user_choice == 'search related':
         searchRelated()
         main()
+    elif user_choice == 'recommendations':
+        recommendFromArtist(searchArtistRecommendation())
+        main()
     elif user_choice == 'user top artists':
-        userTopArtists()
+        printUserTopArtists()
         main()
     elif user_choice == 'user playlists':
         listUserPlaylists()
