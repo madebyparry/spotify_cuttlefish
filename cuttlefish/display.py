@@ -26,7 +26,7 @@ import time
 
 import Adafruit_GPIO.SPI as SPI
 import Adafruit_SSD1306
-from cuttlefish import printWikiResults, currentlyPlaying, printCurrentlyPlaying, currentRuntime, relatedArtists, authenticateSpotipyOauth, playPauseMusic, nextTrack
+from cuttlefish import setEnvVars, currentlyPlaying, printCurrentlyPlaying, currentRuntime, relatedArtists, playPauseMusic, nextTrack
 from gpiozero import MCP3008, LED, Button
 from threading import Thread
 from PIL import Image
@@ -61,7 +61,7 @@ draw = ImageDraw.Draw(image)
 font = ImageFont.load_default()
 
 # Authenticate spotipy
-authenticateSpotipyOauth()
+setEnvVars()
 
 # First define some constants to allow easy resizing of shapes.
 padding = 0 
