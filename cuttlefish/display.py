@@ -152,5 +152,3 @@ while True:
     except: 
         time.sleep(2)
         displayInfo()
-else:
-        print('boop - done')
