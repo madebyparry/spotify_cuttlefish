@@ -105,16 +105,16 @@ def draw_menu(stdscr):
         stdscr.attron(curses.A_BOLD)
 
         # Rendering title
-        stdscr.addstr(start_y, ((width // 2) + width // 4), title)
+        stdscr.addstr(start_y, (height * 2), title)
 
         # Turning off attributes for title
         stdscr.attroff(curses.color_pair(2))
         stdscr.attroff(curses.A_BOLD)
 
         # Print rest of text
-        stdscr.addstr(start_y + 1, ((width // 2) + width // 4), subtitle)
-        stdscr.addstr(start_y + 3, ((width // 2) + width // 4), '-' * 4)
-        stdscr.addstr(start_y + 5, ((width // 2) + width // 4), keystr)
+        stdscr.addstr(start_y + 1, (height * 2), subtitle)
+        stdscr.addstr(start_y + 3, (height * 2), '-' * 4)
+        stdscr.addstr(start_y + 5, (height * 2), keystr)
         stdscr.move(cursor_y, cursor_x)
 
         stdscr.nodelay(True)
