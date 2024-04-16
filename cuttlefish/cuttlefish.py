@@ -566,9 +566,14 @@ def like_song():
     track_list = []
     track_list.append(playing["track_id"])
     sp.current_user_saved_tracks_add(track_list)
-    print(
-        "Liked song: " + playing["track_name"] + " - " + playing["artist_name"] + "\n"
-    )
+    return playing["track_name"], playing["artist_name"]
+    # print(
+    #     "Liked song: " + playing["track_name"] + " - " + playing["artist_name"] + "\n"
+    # )
+
+
+def print_liked_song(track_name, artist_name):
+    print("Liked song: " + track_name + " - " + artist_name + "\n")
 
 
 def triageSelection(user_choice):
@@ -619,7 +624,8 @@ def triageSelection(user_choice):
         queue_track_from_selection(get_liked_songs())
         main()
     elif user_choice == "like song":
-        like_song()
+        track, artist = like_song()
+        print_liked_song(track, artist)
         main()
     elif user_choice == "volume":
         volumeControl()
