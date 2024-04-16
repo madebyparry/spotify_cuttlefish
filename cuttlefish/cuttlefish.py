@@ -576,6 +576,10 @@ def print_liked_song(track_name, artist_name):
     print("Liked song: " + track_name + " - " + artist_name + "\n")
 
 
+def print_dev():
+    print(sp.devices())
+
+
 def triageSelection(user_choice):
     if user_choice == "related artists":
         relatedArtists()
@@ -630,6 +634,9 @@ def triageSelection(user_choice):
     elif user_choice == "volume":
         volumeControl()
         main()
+    elif user_choice == "dev":
+        print_dev()
+        main()
     elif user_choice == "player app":
         player.main()
     elif user_choice == "shutdown":
@@ -659,6 +666,7 @@ initial_choices = [
     "queue a liked song",
     "clear queue",
     "volume",
+    "dev",
     "player app",
     "shutdown",
 ]
